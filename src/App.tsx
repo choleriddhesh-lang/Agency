@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Menu } from 'lucide-react';
 import { Sidebar } from './components/Sidebar';
 import { DashboardPage } from './components/DashboardPage';
 import { NicheDatesPage, NicheDateLeadsPage, NicheLeadsPage, NicheServiceLeadsPage } from './components/NichePages';
@@ -111,6 +112,7 @@ function viewFromOrigin(o: LeadDetailOrigin): View {
 
 function AppContent() {
   const [view, setView] = useState<View>({ kind: 'dashboard' });
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
   function selectSidebar(item: SidebarItem) {
     switch (item) {
@@ -141,6 +143,7 @@ function AppContent() {
       default:
         assertNever(item);
     }
+    setMobileSidebarOpen(false);
   }
 
   function openNiche(niche: Niche | 'All') {
@@ -247,8 +250,38 @@ function AppContent() {
       <div className="fixed inset-y-0 left-0 z-20 hidden sm:block">
         <Sidebar active={viewToSidebarItem(view)} onSelect={selectSidebar} />
       </div>
-      <div className="flex-1 sm:ml-16 lg:ml-60 min-w-0">
-        <main className="p-4 sm:p-6 lg:p-8 max-w-[1400px] mx-auto">{content}</main>
+      {mobileSidebarOpen && (
+        <div className="fixed inset-0 z-40 sm:hidden">
+          <button
+            type="button"
+            aria-label="Close navigation menu"
+            onClick={() => setMobileSidebarOpen(false)}
+            className="absolute inset-0 h-full w-full bg-gray-950/50"
+          />
+          <div className="absolute inset-y-0 left-0 z-10 shadow-xl">
+            <Sidebar
+              active={viewToSidebarItem(view)}
+              onSelect={selectSidebar}
+              mobileDrawer
+              onClose={() => setMobileSidebarOpen(false)}
+            />
+          </div>
+        </div>
+      )}
+      <div className="flex-1 min-w-0 sm:ml-16 lg:ml-60">
+        <header className="fixed inset-x-0 top-0 z-30 flex h-14 items-center border-b border-gray-200 bg-white px-3 sm:hidden">
+          <button
+            type="button"
+            aria-label="Open navigation menu"
+            aria-expanded={mobileSidebarOpen}
+            onClick={() => setMobileSidebarOpen(true)}
+            className="rounded-lg p-2 text-gray-600 hover:bg-gray-100 hover:text-gray-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
+          >
+            <Menu className="h-6 w-6" />
+          </button>
+          <span className="ml-2 text-sm font-semibold text-gray-900">Hermes Outreach</span>
+        </header>
+        <main className="p-4 pt-[4.5rem] sm:p-6 lg:p-8 max-w-[1400px] mx-auto">{content}</main>
       </div>
     </div>
   );

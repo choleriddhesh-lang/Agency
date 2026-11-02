@@ -1,4 +1,4 @@
-import { LayoutDashboard, Stethoscope, Sparkles, Users, ChevronDown, ChevronRight, Wind } from 'lucide-react';
+import { LayoutDashboard, Stethoscope, Sparkles, Users, ChevronDown, ChevronRight, Wind, X } from 'lucide-react';
 import type { SidebarItem } from '../lib/navigation';
 import { useState } from 'react';
 
@@ -18,19 +18,33 @@ const dentalSubmenu: { id: SidebarItem; label: string }[] = [
 export function Sidebar({
   active,
   onSelect,
+  mobileDrawer = false,
+  onClose,
 }: {
   active: SidebarItem;
   onSelect: (item: SidebarItem) => void;
+  mobileDrawer?: boolean;
+  onClose?: () => void;
 }) {
   const [isOpen, setIsOpen] = useState(false);
 
   return (
-    <aside className="w-16 lg:w-60 shrink-0 bg-white border-r border-gray-200 flex flex-col h-full">
-      <div className="h-16 flex items-center gap-2 px-3 lg:px-5 border-b border-gray-100">
+    <aside className={`${mobileDrawer ? 'w-60' : 'w-16 lg:w-60'} shrink-0 bg-white border-r border-gray-200 flex flex-col h-full`}>
+      <div className={`h-16 flex items-center gap-2 px-3 ${mobileDrawer ? 'justify-between pl-5' : 'lg:px-5'} border-b border-gray-100`}>
         <div className="w-8 h-8 rounded-lg bg-emerald-600 flex items-center justify-center shrink-0">
           <span className="text-white font-bold text-sm">H</span>
         </div>
-        <span className="hidden lg:block font-semibold text-gray-900 text-sm truncate">Hermes Outreach</span>
+        <span className={`${mobileDrawer ? 'block' : 'hidden lg:block'} font-semibold text-gray-900 text-sm truncate`}>Hermes Outreach</span>
+        {mobileDrawer && onClose && (
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Close navigation menu"
+            className="rounded-lg p-2 text-gray-500 hover:bg-gray-100 hover:text-gray-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        )}
       </div>
       <nav className="flex-1 py-3 px-2 space-y-1 overflow-y-auto">
         {items.map((it) => {
@@ -57,16 +71,16 @@ export function Sidebar({
               >
                 <div className="flex items-center gap-3">
                   <Icon className={`w-5 h-5 shrink-0 ${isDentalActive ? 'text-emerald-600' : 'text-gray-400'}`} />
-                  <span className="hidden lg:block">{it.label}</span>
+                  <span className={mobileDrawer ? 'block' : 'hidden lg:block'}>{it.label}</span>
                 </div>
                 {it.hasSubmenu && (
-                  <span className="hidden lg:block">
+                  <span className={mobileDrawer ? 'block' : 'hidden lg:block'}>
                     {isOpen ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
                   </span>
                 )}
               </button>
               {it.hasSubmenu && isOpen && (
-                <div className="hidden lg:block ml-9 space-y-1">
+                <div className={`${mobileDrawer ? 'block' : 'hidden lg:block'} ml-9 space-y-1`}>
                   {dentalSubmenu.map((sub) => (
                     <button
                       key={sub.id}

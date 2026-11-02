@@ -1,0 +1,138 @@
+import { useState } from 'react';
+import { Sidebar } from './components/Sidebar';
+import { DashboardPage } from './components/DashboardPage';
+import { NicheDatesPage, NicheDateLeadsPage } from './components/NichePages';
+import { LeadDetailPage } from './components/LeadDetailPage';
+import { AllLeadsPage } from './components/AllLeadsPage';
+import { OutreachHistoryPage } from './components/OutreachHistoryPage';
+import { isSupabaseConfigured } from './lib/supabase';
+import type { View, SidebarItem, LeadDetailOrigin } from './lib/navigation';
+import type { Niche } from './lib/types';
+
+function viewToSidebarItem(v: View): SidebarItem {
+  switch (v.kind) {
+    case 'dashboard':
+      return 'dashboard';
+    case 'niche-dates':
+    case 'niche-date-leads':
+      return v.niche === 'Dental' ? 'dental' : 'dermatology';
+    case 'lead-detail':
+      if (v.origin.kind === 'niche-date-leads') return v.origin.niche === 'Dental' ? 'dental' : 'dermatology';
+      if (v.origin.kind === 'all-leads') return 'all-leads';
+      return 'outreach-history';
+    case 'all-leads':
+      return 'all-leads';
+    case 'outreach-history':
+      return 'outreach-history';
+  }
+}
+
+function backLabelForOrigin(o: LeadDetailOrigin): string {
+  switch (o.kind) {
+    case 'niche-date-leads':
+      return o.niche === 'Dental' ? 'Back to dental leads' : 'Back to dermatology leads';
+    case 'all-leads':
+      return 'Back to all leads';
+    case 'outreach-history':
+      return 'Back to outreach history';
+  }
+}
+
+function viewFromOrigin(o: LeadDetailOrigin): View {
+  if (o.kind === 'all-leads') return { kind: 'all-leads' };
+  if (o.kind === 'outreach-history') return { kind: 'outreach-history' };
+  return { kind: 'niche-date-leads', niche: o.niche, date: o.date };
+}
+
+export default function App() {
+  const [view, setView] = useState<View>({ kind: 'dashboard' });
+
+  function selectSidebar(item: SidebarItem) {
+    switch (item) {
+      case 'dashboard':
+        setView({ kind: 'dashboard' });
+        break;
+      case 'dental':
+        setView({ kind: 'niche-dates', niche: 'Dental' });
+        break;
+      case 'dermatology':
+        setView({ kind: 'niche-dates', niche: 'Dermatology' });
+        break;
+      case 'all-leads':
+        setView({ kind: 'all-leads' });
+        break;
+      case 'outreach-history':
+        setView({ kind: 'outreach-history' });
+        break;
+    }
+  }
+
+  function openLead(leadId: string, origin: LeadDetailOrigin) {
+    setView({ kind: 'lead-detail', leadId, origin });
+  }
+
+  let content: React.ReactNode;
+  switch (view.kind) {
+    case 'dashboard':
+      content = <DashboardPage />;
+      break;
+    case 'niche-dates':
+      content = (
+        <NicheDatesPage
+          niche={view.niche}
+          onBack={() => setView({ kind: 'dashboard' })}
+          onOpenDate={(date) => setView({ kind: 'niche-date-leads', niche: view.niche, date })}
+        />
+      );
+      break;
+    case 'niche-date-leads':
+      content = (
+        <NicheDateLeadsPage
+          niche={view.niche}
+          date={view.date}
+          onBack={() => setView({ kind: 'niche-dates', niche: view.niche })}
+          onOpenLead={(id) => openLead(id, { kind: 'niche-date-leads', niche: view.niche, date: view.date })}
+        />
+      );
+      break;
+    case 'lead-detail':
+      content = (
+        <LeadDetailPage
+          leadId={view.leadId}
+          backLabel={backLabelForOrigin(view.origin)}
+          onBack={() => setView(viewFromOrigin(view.origin))}
+        />
+      );
+      break;
+    case 'all-leads':
+      content = <AllLeadsPage onOpenLead={(id) => openLead(id, { kind: 'all-leads' })} />;
+      break;
+    case 'outreach-history':
+      content = <OutreachHistoryPage onOpenLead={(id) => openLead(id, { kind: 'outreach-history' })} />;
+      break;
+  }
+
+  if (!isSupabaseConfigured) {
+    content = (
+      <div className="max-w-xl mx-auto py-16 px-6">
+        <div className="bg-amber-50 border border-amber-200 rounded-2xl p-6 text-center">
+          <h2 className="text-base font-semibold text-amber-900 mb-2">Supabase not configured</h2>
+          <p className="text-sm text-amber-800">
+            VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY must be set in your environment to connect this dashboard to its database.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-50 text-gray-900 flex">
+      <div className="fixed inset-y-0 left-0 z-20 hidden sm:block">
+        <Sidebar active={viewToSidebarItem(view)} onSelect={selectSidebar} />
+      </div>
+      <div className="flex-1 sm:ml-16 lg:ml-60 min-w-0">
+        <main className="p-4 sm:p-6 lg:p-8 max-w-[1400px] mx-auto">{content}</main>
+      </div>
+    </div>
+  );
+}
